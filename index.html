@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Домашна каса</title>
+<meta name="theme-color" content="#1d4c42">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: a household ledger — sticky month bar on top, tabs below, summary before detail; one column on phones. */
+:root {
+  --bg: #eef1ed;
+  --surface: #fbfcfa;
+  --sunken: #e4e8e3;
+  --ink: #131915;
+  --ink-2: #4b5550;
+  --muted: #7d8681;
+  --line: #d8ddd7;
+  --accent: #1d4c42;
+  --accent-ink: #ffffff;
+  --accent-soft: #d6e6e0;
+  --income: #0b7239;
+  --critical: #c0352f;
+  --critical-soft: #f7dedb;
+  --good: #0b7239;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300;
+  --bar-inc: #1baf7a;
+  --bar-exp: #eb6834;
+  --shadow: 0 1px 2px rgba(19,25,21,.06), 0 8px 24px rgba(19,25,21,.06);
+  --f-display: "Unbounded", "Onest", system-ui, sans-serif;
+  --f-body: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1210; --surface: #171c19; --sunken: #1f2522; --ink: #edf1ee; --ink-2: #b6beb9; --muted: #818a85;
+    --line: #2b322e; --accent: #86c9b6; --accent-ink: #0e1210; --accent-soft: #1f3530; --income: #4cc27e;
+    --critical: #ef6b67; --critical-soft: #3a1f1e; --good: #4cc27e;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c;
+    --bar-inc: #199e70; --bar-exp: #d95926;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1210; --surface: #171c19; --sunken: #1f2522; --ink: #edf1ee; --ink-2: #b6beb9; --muted: #818a85;
+  --line: #2b322e; --accent: #86c9b6; --accent-ink: #0e1210; --accent-soft: #1f3530; --income: #4cc27e;
+  --critical: #ef6b67; --critical-soft: #3a1f1e; --good: #4cc27e;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c;
+  --bar-inc: #199e70; --bar-exp: #d95926;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h2 { font-size: 15px; font-weight: 600; }
+
+/* top bar */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.top-in { max-width: 1100px; margin: 0 auto; padding: 12px 16px 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+.brand { font-family: var(--f-display); font-weight: 700; font-size: 17px; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
+.brand-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 14px; }
+.month-nav { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.month-nav button { border: 0; background: transparent; width: 34px; height: 34px; border-radius: 999px; font-size: 18px; line-height: 1; color: var(--ink-2); }
+.month-nav button:hover { background: var(--sunken); color: var(--ink); }
+.month-label { min-width: 150px; text-align: center; font-weight: 600; }
+.month-label small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); line-height: 1.1; }
+.top-actions { justify-self: end; display: flex; gap: 8px; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 14px; font-weight: 600; font-size: 14px; }
+.btn:hover { border-color: var(--muted); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn-primary:hover { filter: brightness(1.08); border-color: var(--accent); }
+.btn-danger { color: var(--critical); }
+.btn-sm { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.tabs { max-width: 1100px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tabs button { border: 0; background: none; padding: 12px 12px 11px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; font-size: 14px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs button:hover { color: var(--ink); }
+
+main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 96px; display: grid; gap: 20px; }
+.notice { background: var(--accent-soft); color: var(--ink); border-radius: var(--r); padding: 12px 14px; font-size: 14px; }
+.notice.warn { background: var(--critical-soft); }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 4px; min-width: 0; }
+.kpi .lbl { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.kpi b { font-family: var(--f-display); font-weight: 500; font-size: clamp(18px, 2.4vw, 24px); letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; }
+.kpi small { color: var(--ink-2); font-size: 13px; }
+.kpi.hero { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.kpi.hero .lbl, .kpi.hero small { color: inherit; opacity: .8; }
+.inc { color: var(--income); }
+.neg { color: var(--critical); }
+.minibar { height: 6px; border-radius: 3px; background: var(--sunken); overflow: hidden; margin-top: 4px; }
+.minibar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.minibar.over i { background: var(--critical); }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.panel-head small { color: var(--muted); font-size: 13px; }
+.stack { display: grid; gap: 20px; }
+
+/* category rows */
+.cat-list { display: grid; }
+.cat-row { width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--line); padding: 12px 4px; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 6px; align-items: center; }
+.cat-list > .cat-row:first-child { border-top: 0; }
+.cat-row:hover { background: var(--sunken); border-radius: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 4px; background: var(--c); }
+.cname { font-weight: 600; min-width: 0; }
+.cname em { font-style: normal; font-weight: 400; color: var(--muted); font-size: 13px; }
+.camt { font-weight: 600; text-align: right; }
+.cmeter { grid-column: 2 / 4; height: 8px; border-radius: 4px; background: var(--sunken); position: relative; overflow: hidden; }
+.cmeter i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--c); }
+.cmeter.over i { background: var(--critical); }
+.cnote { grid-column: 2 / 4; font-size: 13px; color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.cnote .bad { color: var(--critical); font-weight: 600; }
+.chev { display: inline-block; transition: transform .15s; color: var(--muted); margin-left: 6px; font-size: 11px; }
+.cat-row[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.cat-detail { padding: 2px 4px 14px 30px; display: grid; gap: 8px; }
+.cat-detail .rows { background: var(--bg); border-radius: 10px; padding: 4px 10px; }
+
+/* entry rows */
+.rows { display: grid; }
+.row { width: 100%; background: none; border: 0; text-align: left; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 2px; border-top: 1px solid var(--line); }
+.rows > .row:first-child, .rows > .day + .row { border-top: 0; }
+.row:hover { background: var(--sunken); }
+.row .dot { width: 10px; height: 10px; border-radius: 3px; }
+.row-main { min-width: 0; display: grid; }
+.row-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-sub { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-amt { font-weight: 600; text-align: right; }
+.row.virtual { opacity: .72; }
+.row.virtual .row-amt { font-style: italic; }
+.tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); vertical-align: 1px; margin-left: 4px; }
+.tag.dashed { background: transparent; border: 1px dashed var(--muted); color: var(--ink-2); }
+.day { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 14px 2px 4px; }
+.empty { color: var(--ink-2); font-size: 14px; padding: 12px 2px; }
+.empty b { color: var(--ink); }
+
+/* filters */
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > span { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.input, select.input { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-height: 38px; min-width: 0; }
+.input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.filters .grow { flex: 1 1 180px; }
+.sumline { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--ink-2); padding: 12px 2px 0; }
+.sumline b { color: var(--ink); }
+
+/* budget / report */
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.money-in { position: relative; }
+.money-in .input { width: 100%; padding-right: 28px; text-align: right; font-variant-numeric: tabular-nums; }
+.money-in::after { content: "€"; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.plan-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.plan-label .dot { width: 10px; height: 10px; }
+.plan-actions { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 14px; }
+.check { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--ink-2); }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+th, td { padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.tcat { display: inline-flex; align-items: center; gap: 8px; }
+tfoot td { font-weight: 700; border-bottom: 0; }
+tr.sep td { border-top: 2px solid var(--line); }
+.diff-good { color: var(--good); }
+.diff-bad { color: var(--critical); font-weight: 600; }
+.pct { display: inline-block; min-width: 46px; }
+
+/* chart */
+.chart-box { position: relative; }
+.chart-box svg { display: block; width: 100%; height: auto; overflow: visible; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legend i.tick { height: 0; border-top: 2px dashed var(--ink); border-radius: 0; width: 16px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 10px; padding: 8px 10px; font-size: 13px; min-width: 170px; z-index: 5; }
+.tip b { display: block; margin-bottom: 4px; }
+.tip div { display: flex; justify-content: space-between; gap: 12px; }
+details.as-table { margin-top: 10px; font-size: 14px; }
+details.as-table summary { cursor: pointer; color: var(--ink-2); font-weight: 500; }
+
+/* recurring */
+.tpl { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; padding: 14px 2px; border-top: 1px solid var(--line); }
+.tpl:first-child { border-top: 0; }
+.tpl-acts { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.pill.on { background: var(--accent-soft); color: var(--ink); }
+.pill.off { background: var(--sunken); color: var(--muted); }
+.tpl.paused .row-title, .tpl.paused .row-amt { color: var(--muted); }
+
+/* sheet (modal) */
+.scrim { position: fixed; inset: 0; background: rgba(8,12,10,.45); z-index: 50; display: grid; place-items: center; padding: 16px; }
+.sheet { background: var(--surface); border-radius: 16px; width: min(520px, 100%); max-height: calc(100% - 16px); overflow-y: auto; box-shadow: var(--shadow); padding: 20px; display: grid; gap: 16px; }
+.sheet h3 { font-family: var(--f-display); font-weight: 500; font-size: 18px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--sunken); border-radius: 10px; padding: 3px; }
+.seg label { text-align: center; padding: 8px; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--ink-2); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg input:checked + label { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); }
+.amount-in { position: relative; }
+.amount-in input { width: 100%; font-family: var(--f-display); font-size: 28px; font-weight: 500; padding: 10px 44px 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-variant-numeric: tabular-nums; }
+.amount-in::after { content: "€"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-family: var(--f-display); font-size: 22px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips label { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.chips label em { font-style: normal; color: var(--muted); font-size: 12.5px; }
+.chips label .dot { width: 10px; height: 10px; }
+.chips input:checked + label { border-color: var(--ink); background: var(--sunken); box-shadow: inset 0 0 0 1px var(--ink); }
+.chips input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row2 .field .input, .sheet .field .input { width: 100%; }
+.hint { font-size: 12.5px; color: var(--muted); }
+.form-err { color: var(--critical); font-size: 14px; font-weight: 500; }
+.sheet-acts { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+.sheet-acts .left { margin-right: auto; }
+.confirm { background: var(--critical-soft); border-radius: 10px; padding: 10px 12px; display: grid; gap: 8px; font-size: 14px; }
+.confirm div { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 60; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
+.fab { display: none; }
+
+@media (max-width: 860px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .top-in { grid-template-columns: 1fr auto; }
+  .brand-text { display: none; }
+  .top-actions { display: none; }
+  .month-label { min-width: 128px; }
+  .fab { display: grid; place-items: center; position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 56px; height: 56px; border-radius: 18px; border: 0; background: var(--accent); color: var(--accent-ink); font-size: 28px; box-shadow: var(--shadow); z-index: 30; }
+  .row2 { grid-template-columns: 1fr; }
+  .cat-detail { padding-left: 4px; }
+  .scrim { place-items: end center; padding: 0; }
+  .sheet { border-radius: 16px 16px 0 0; width: 100%; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+.gate { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; padding: 24px 16px; }
+.gate-card { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px 24px; display: grid; gap: 14px; box-shadow: var(--shadow); }
+.gate-card h1 { font-family: var(--f-display); font-weight: 700; font-size: 22px; display: flex; align-items: center; gap: 10px; }
+.gate-card p { margin: 0; color: var(--ink-2); }
+.gate-card .btn { justify-self: start; padding: 10px 18px; }
+.foot { max-width: 1100px; margin: -72px auto 0; padding: 0 16px 96px; color: var(--muted); font-size: 13px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.foot button { background: none; border: 0; padding: 0; color: var(--ink-2); text-decoration: underline; font-size: 13px; }
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">€</span><span class="brand-text">Домашна каса</span></div>
+    <nav class="month-nav" aria-label="Месец">
+      <button type="button" data-action="prev-month" aria-label="Предишен месец">‹</button>
+      <div class="month-label" id="month-label">—</div>
+      <button type="button" data-action="next-month" aria-label="Следващ месец">›</button>
+    </nav>
+    <div class="top-actions" id="top-actions">
+      <button type="button" class="btn btn-primary" data-action="add">+ Добави запис</button>
+    </div>
+  </div>
+  <div class="tabs" role="tablist" id="tabs">
+    <button type="button" role="tab" data-tab="overview" aria-selected="true">Преглед</button>
+    <button type="button" role="tab" data-tab="records" aria-selected="false">Записи</button>
+    <button type="button" role="tab" data-tab="budget" aria-selected="false">Бюджет и справка</button>
+    <button type="button" role="tab" data-tab="recurring" aria-selected="false">Повтарящи се</button>
+  </div>
+</header>
+
+<main id="main">
+  <div class="panel">
+    <div class="panel-head"><h2>Зареждаме записите…</h2></div>
+    <p class="empty">Тук ще видите приходите и разходите за месеца, разпределени по категории. Натиснете „Добави запис“, за да въведете първия.</p>
+  </div>
+</main>
+
+<button type="button" class="fab" id="fab" data-action="add" aria-label="Добави запис">+</button>
+
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <h1><span class="brand-mark" aria-hidden="true">€</span>Домашна каса</h1>
+    <p id="gate-text">Зареждаме…</p>
+    <button type="button" class="btn btn-primary" id="gate-btn" data-action="signin" hidden>Вход с Google</button>
+    <button type="button" class="btn" id="gate-out" data-action="signout" hidden>Излез и опитай с друг акаунт</button>
+  </div>
+</div>
+<footer class="foot" id="foot" hidden>Влезли сте като <span id="user-email"></span> · <button type="button" data-action="signout">Изход</button></footer>
+<div id="modal-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection as fsCollection, doc as fsDoc, setDoc, updateDoc, deleteDoc, onSnapshot as fsOnSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+// ▼▼▼ ПОСТАВЕТЕ ТУК firebaseConfig ОТ FIREBASE (Project settings → Your apps) ▼▼▼
+const firebaseConfig = {
+  apiKey: "AIzaSyAo6mj2_N5MmuFglRDWBzGT3QdvHqsVU0w",
+  authDomain: "domashna-kasa.firebaseapp.com",
+  projectId: "domashna-kasa",
+  storageBucket: "domashna-kasa.firebasestorage.app",
+  messagingSenderId: "36167870251",
+  appId: "1:36167870251:web:b793f6752d9f947a43c76e",
+  measurementId: "G-VCQ3FHKPZV"
+};
+// ▲▲▲ ▲▲▲ ▲▲▲
+
+(function () {
+  "use strict";
+
+  // ---------- constants ----------
+  const EXP = [
+    { id: "transport", name: "Пътни", hint: "кола, тролей и т.н.", c: "var(--s1)" },
+    { id: "food", name: "Пазаруване", hint: "храна", c: "var(--s2)" },
+    { id: "bills", name: "Сметки", hint: "", c: "var(--s3)" },
+    { id: "rent", name: "Наем", hint: "", c: "var(--s4)" },
+    { id: "out", name: "Излизания", hint: "", c: "var(--s5)" },
+    { id: "other", name: "Друго", hint: "", c: "var(--s6)" },
+  ];
+  const INC = [
+    { id: "salary", name: "Заплата", hint: "", c: "var(--income)" },
+    { id: "extra", name: "Допълнителен доход", hint: "", c: "var(--income)" },
+    { id: "gift", name: "Подарък / връщане", hint: "", c: "var(--income)" },
+    { id: "other_in", name: "Друг приход", hint: "", c: "var(--income)" },
+  ];
+  const CAT = Object.fromEntries([...EXP, ...INC].map((c) => [c.id, c]));
+  const MONTHS = ["Януари", "Февруари", "Март", "Април", "Май", "Юни", "Юли", "Август", "Септември", "Октомври", "Ноември", "Декември"];
+  const MONTHS_SHORT = ["яну", "фев", "мар", "апр", "май", "юни", "юли", "авг", "сеп", "окт", "ное", "дек"];
+  const WEEKDAYS = ["нд", "пн", "вт", "ср", "чт", "пт", "сб"];
+
+  // ---------- helpers ----------
+  const pad = (n) => String(n).padStart(2, "0");
+  const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const curMonth = () => todayStr().slice(0, 7);
+  const addMonths = (m, k) => {
+    let [y, mo] = m.split("-").map(Number);
+    mo += k; y += Math.floor((mo - 1) / 12); mo = (((mo - 1) % 12) + 12) % 12 + 1;
+    return `${y}-${pad(mo)}`;
+  };
+  const daysIn = (m) => { const [y, mo] = m.split("-").map(Number); return new Date(y, mo, 0).getDate(); };
+  const monthLabel = (m) => `${MONTHS[+m.slice(5) - 1]} ${m.slice(0, 4)}`;
+  const dayLabel = (d) => { const dt = new Date(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8)); return `${WEEKDAYS[dt.getDay()]}, ${+d.slice(8)} ${MONTHS_SHORT[dt.getMonth()]}`; };
+  const shortDate = (d) => `${+d.slice(8)} ${MONTHS_SHORT[+d.slice(5, 7) - 1]}`;
+  const fmt = new Intl.NumberFormat("bg-BG", { style: "currency", currency: "EUR" });
+  const fmt0 = new Intl.NumberFormat("bg-BG", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  const money = (c) => fmt.format((c || 0) / 100);
+  const money0 = (c) => fmt0.format(Math.round((c || 0) / 100));
+  const signed = (e) => (e.kind === "income" ? "+" : "−") + money(e.cents);
+  const toInput = (c) => (c ? (c / 100).toFixed(2).replace(".", ",").replace(",00", "") : "");
+  const parseAmount = (s) => {
+    s = String(s || "").replace(/[\s€]/g, "").replace(",", ".");
+    if (!s) return null;
+    const v = Number(s);
+    if (!isFinite(v) || v <= 0) return null;
+    return Math.round(v * 100);
+  };
+  const parsePlan = (s) => { s = String(s || "").replace(/[\s€]/g, "").replace(",", "."); if (!s) return 0; const v = Number(s); return isFinite(v) && v > 0 ? Math.round(v * 100) : 0; };
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const $ = (sel) => document.querySelector(sel);
+
+  // ---------- state ----------
+  const S = {
+    db: null, canWrite: true, noDb: false,
+    entries: [], recurring: [], budgets: {},
+    got: { e: false, r: false, b: false },
+    sure: { e: false, r: false },
+    month: curMonth(), tab: "overview", open: null,
+    filter: { period: "month", from: "", to: "", kind: "all", cat: "all", q: "" },
+    modal: null,
+  };
+  try { const t = localStorage.getItem("kasa-tab"); if (t) S.tab = t; } catch (e) {}
+  const attempted = new Set();
+
+  // ---------- data shaping ----------
+  function instanceFor(r, m, virtual) {
+    const d = Math.min(r.day || 1, daysIn(m));
+    return { id: `rec-${r.id}-${m}`, kind: r.kind, cents: r.cents, cat: r.cat, note: r.note || "", date: `${m}-${pad(d)}`, month: m, rec: r.id, virtual: !!virtual };
+  }
+  function monthEntries(m) {
+    const real = S.entries.filter((e) => e.month === m);
+    if (m <= curMonth()) return real;
+    const ids = new Set(real.map((e) => e.id));
+    const virt = S.recurring
+      .filter((r) => r.active && r.start <= m && !(r.skip || []).includes(m) && !ids.has(`rec-${r.id}-${m}`))
+      .map((r) => instanceFor(r, m, true));
+    return real.concat(virt);
+  }
+  function totals(list) {
+    const t = { inc: 0, exp: 0, byCat: {}, count: {} };
+    for (const e of list) {
+      if (e.kind === "income") t.inc += e.cents; else t.exp += e.cents;
+      t.byCat[e.cat] = (t.byCat[e.cat] || 0) + e.cents;
+      t.count[e.cat] = (t.count[e.cat] || 0) + 1;
+    }
+    return t;
+  }
+  function budgetFor(m) {
+    if (S.budgets[m]) return { ...S.budgets[m], source: "month" };
+    if (S.budgets.default) return { ...S.budgets.default, source: "default" };
+    return { limits: {}, income: 0, source: null };
+  }
+  const planTotal = (b) => EXP.reduce((s, c) => s + ((b.limits || {})[c.id] || 0), 0);
+  const sortEntries = (list) => list.slice().sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.created || "").localeCompare(a.created || ""));
+
+  // ---------- rendering ----------
+  function render() {
+    const lbl = $("#month-label");
+    const cm = curMonth();
+    lbl.innerHTML = `${esc(monthLabel(S.month))}<small>${S.month === cm ? "текущ месец" : S.month > cm ? "бъдещ месец · прогноза" : "минал месец"}</small>`;
+    document.querySelectorAll("#tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === S.tab)));
+    const canAdd = S.canWrite && !S.noDb;
+    $("#top-actions").hidden = !canAdd;
+    $("#fab").hidden = !canAdd;
+
+    const main = $("#main");
+    let html = "";
+    if (S.noDb) html += `<div class="notice warn">Няма връзка с базата. Проверете интернета и презаредете страницата.</div>`;
+    else if (!S.canWrite) html += `<div class="notice">Този акаунт няма права да променя записите.</div>`;
+    if (S.tab === "overview") html += viewOverview();
+    else if (S.tab === "records") html += viewRecords();
+    else if (S.tab === "budget") html += viewBudget();
+    else html += viewRecurring();
+    const keep = captureInputs(main);
+    main.innerHTML = html;
+    restoreInputs(main, keep);
+    if (S.tab === "budget") drawChart();
+  }
+
+  // keep typed-but-unsaved values in the budget form across live re-renders
+  function captureInputs(root) {
+    const out = {};
+    root.querySelectorAll("input[data-keep]").forEach((i) => { if (i.dataset.dirty) out[i.id] = i.type === "checkbox" ? i.checked : i.value; });
+    const a = document.activeElement;
+    return { vals: out, focus: a && root.contains(a) ? a.id : null };
+  }
+  function restoreInputs(root, keep) {
+    for (const [id, v] of Object.entries(keep.vals)) {
+      const i = root.querySelector("#" + CSS.escape(id));
+      if (!i) continue;
+      if (i.type === "checkbox") i.checked = v; else i.value = v;
+      i.dataset.dirty = "1";
+    }
+    if (keep.focus) { const f = root.querySelector("#" + CSS.escape(keep.focus)); if (f) f.focus(); }
+  }
+
+  function loadingOr(emptyMsg) {
+    if (!S.got.e && !S.noDb) return `<p class="empty">Зареждаме записите…</p>`;
+    return emptyMsg;
+  }
+
+  function entryRow(e, opts = {}) {
+    const c = CAT[e.cat] || { name: e.cat, c: "var(--muted)" };
+    const title = opts.noteFirst && e.note ? esc(e.note) : esc(c.name);
+    const subParts = [];
+    if (!(opts.noteFirst && e.note) && e.note) subParts.push(esc(e.note));
+    if (opts.noteFirst && e.note) subParts.push(esc(c.name));
+    if (opts.showDate) subParts.push(shortDate(e.date));
+    const recTag = e.virtual ? `<span class="tag dashed">очаквано</span>` : e.rec ? `<span class="tag" title="Повтарящ се запис">↻ месечно</span>` : "";
+    return `<button type="button" class="row${e.virtual ? " virtual" : ""}" data-action="edit" data-id="${esc(e.id)}" data-month="${esc(e.month)}">
+      <span class="dot" style="--c:${c.c}"></span>
+      <span class="row-main"><span class="row-title">${title}${recTag}</span>${subParts.length ? `<span class="row-sub">${subParts.join(" · ")}</span>` : ""}</span>
+      <span class="row-amt num ${e.kind === "income" ? "inc" : ""}">${signed(e)}</span>
+    </button>`;
+  }
+
+  function viewOverview() {
+    const m = S.month;
+    const list = monthEntries(m);
+    const t = totals(list);
+    const b = budgetFor(m);
+    const pt = planTotal(b);
+    const bal = t.inc - t.exp;
+    const usedPct = pt ? Math.round((t.exp / pt) * 100) : null;
+    const hasVirtual = list.some((e) => e.virtual);
+
+    let h = "";
+    if (hasVirtual) h += `<div class="notice">Това е бъдещ месец. Повтарящите се приходи и разходи са показани като „очаквано“ и ще се прехвърлят автоматично, когато месецът започне.</div>`;
+    h += `<section class="kpis" aria-label="Обобщение за месеца">
+      <div class="kpi"><span class="lbl">Приходи</span><b class="num inc">${money(t.inc)}</b><small>${b.income ? `план ${money0(b.income)}` : "без план за приходи"}</small></div>
+      <div class="kpi"><span class="lbl">Разходи</span><b class="num">${money(t.exp)}</b><small>${pt ? `от бюджет ${money0(pt)}` : "няма зададен бюджет"}</small></div>
+      <div class="kpi hero"><span class="lbl">Остават</span><b class="num">${bal < 0 ? "−" : ""}${money(Math.abs(bal))}</b><small>${bal < 0 ? "похарчили сме повече от приходите" : "приходи минус разходи"}</small></div>
+      <div class="kpi"><span class="lbl">Бюджет</span><b class="num ${usedPct !== null && usedPct > 100 ? "neg" : ""}">${usedPct === null ? "—" : usedPct + "%"}</b>
+        ${usedPct === null ? `<small><a href="#" data-action="goto" data-tab="budget" style="color:inherit">Задайте месечен бюджет</a></small>` : `<div class="minibar ${usedPct > 100 ? "over" : ""}"><i style="width:${Math.min(usedPct, 100)}%"></i></div><small>${usedPct > 100 ? "⚠ над бюджета с " + money0(t.exp - pt) : "остават " + money0(pt - t.exp)}</small>`}
+      </div>
+    </section>`;
+
+    // categories
+    const maxSpent = Math.max(1, ...EXP.map((c) => t.byCat[c.id] || 0));
+    let cats = "";
+    for (const c of EXP) {
+      const spent = t.byCat[c.id] || 0;
+      const plan = (b.limits || {})[c.id] || 0;
+      const over = plan && spent > plan;
+      const w = plan ? Math.min(spent / plan, 1) * 100 : (spent / maxSpent) * 100;
+      const n = t.count[c.id] || 0;
+      const open = S.open === c.id;
+      let note;
+      if (plan) note = over ? `<span class="bad">⚠ над плана с ${money(spent - plan)}</span>` : `<span>остават ${money(plan - spent)}</span>`;
+      else note = `<span>няма план за категорията</span>`;
+      cats += `<button type="button" class="cat-row" data-action="toggle-cat" data-cat="${c.id}" aria-expanded="${open}" style="--c:${c.c}">
+        <span class="dot"></span>
+        <span class="cname">${esc(c.name)}${c.hint ? ` <em>(${esc(c.hint)})</em>` : ""}<span class="chev" aria-hidden="true">▶</span></span>
+        <span class="camt num">${money(spent)}</span>
+        <span class="cmeter ${over ? "over" : ""}" aria-hidden="true"><i style="width:${w}%"></i></span>
+        <span class="cnote">${note}<span>${plan ? `план ${money0(plan)} · ` : ""}${n} ${n === 1 ? "запис" : "записа"}</span></span>
+      </button>`;
+      if (open) {
+        const items = sortEntries(list.filter((e) => e.cat === c.id));
+        cats += `<div class="cat-detail">
+          ${items.length ? `<div class="rows">${items.map((e) => entryRow(e, { noteFirst: true, showDate: true })).join("")}</div>` : `<p class="empty">Няма разходи в „${esc(c.name)}“ за ${esc(monthLabel(m).toLowerCase())}.</p>`}
+          ${S.canWrite && !S.noDb ? `<div><button type="button" class="btn btn-sm" data-action="add" data-kind="expense" data-cat="${c.id}">+ Разход в „${esc(c.name)}“</button></div>` : ""}
+        </div>`;
+      }
+    }
+
+    // income + latest
+    const incomes = sortEntries(list.filter((e) => e.kind === "income"));
+    const latest = sortEntries(list).slice(0, 8);
+    h += `<div class="cols">
+      <section class="panel">
+        <div class="panel-head"><h2>Разходи по категории</h2><small>Натиснете категория, за да видите разходите в нея</small></div>
+        <div class="cat-list">${cats}</div>
+      </section>
+      <div class="stack">
+        <section class="panel">
+          <div class="panel-head"><h2>Приходи за месеца</h2><small class="num inc">${money(t.inc)}</small></div>
+          ${incomes.length ? `<div class="rows">${incomes.map((e) => entryRow(e, { showDate: true })).join("")}</div>` : loadingOr(`<p class="empty">Още няма въведени приходи. ${S.canWrite && !S.noDb ? `<button type="button" class="btn btn-sm" data-action="add" data-kind="income">+ Добави приход</button>` : ""}</p>`)}
+        </section>
+        <section class="panel">
+          <div class="panel-head"><h2>Последни записи</h2><a href="#" data-action="goto" data-tab="records" style="color:var(--ink-2);font-size:13px">Всички записи →</a></div>
+          ${latest.length ? `<div class="rows">${latest.map((e) => entryRow(e, { showDate: true })).join("")}</div>` : loadingOr(`<p class="empty"><b>Още няма записи за ${esc(monthLabel(m).toLowerCase())}.</b><br>Добавете разход или приход с бутона „+ Добави запис“. Всеки запис има категория, дата и кратко описание по желание.</p>`)}
+        </section>
+      </div>
+    </div>`;
+    return h;
+  }
+
+  function periodRange() {
+    const f = S.filter, m = S.month;
+    if (f.period === "month") return [`${m}-01`, `${m}-31`];
+    if (f.period === "3m") return [`${addMonths(m, -2)}-01`, `${m}-31`];
+    if (f.period === "year") return [`${m.slice(0, 4)}-01-01`, `${m.slice(0, 4)}-12-31`];
+    if (f.period === "custom") return [f.from || "0000-00-00", f.to || "9999-99-99"];
+    return ["0000-00-00", "9999-99-99"];
+  }
+
+  function viewRecords() {
+    const f = S.filter;
+    const [from, to] = periodRange();
+    let source = f.period === "month" ? monthEntries(S.month) : S.entries;
+    const q = f.q.trim().toLowerCase();
+    const list = sortEntries(source.filter((e) =>
+      e.date >= from && e.date <= to &&
+      (f.kind === "all" || e.kind === f.kind) &&
+      (f.cat === "all" || e.cat === f.cat) &&
+      (!q || (e.note || "").toLowerCase().includes(q) || (CAT[e.cat]?.name || "").toLowerCase().includes(q))
+    ));
+    const t = totals(list);
+    const opt = (v, l, cur) => `<option value="${v}"${cur === v ? " selected" : ""}>${esc(l)}</option>`;
+
+    let h = `<section class="panel">
+      <div class="filters">
+        <label class="field"><span>Период</span>
+          <select class="input" id="f-period" data-filter="period">
+            ${opt("month", monthLabel(S.month), f.period)}
+            ${opt("3m", "Последните 3 месеца", f.period)}
+            ${opt("year", "Цялата " + S.month.slice(0, 4) + " г.", f.period)}
+            ${opt("all", "Всички записи", f.period)}
+            ${opt("custom", "Период по избор…", f.period)}
+          </select></label>
+        ${f.period === "custom" ? `<label class="field"><span>От</span><input class="input" type="date" id="f-from" data-filter="from" value="${esc(f.from)}"></label>
+        <label class="field"><span>До</span><input class="input" type="date" id="f-to" data-filter="to" value="${esc(f.to)}"></label>` : ""}
+        <label class="field"><span>Вид</span>
+          <select class="input" id="f-kind" data-filter="kind">${opt("all", "Приходи и разходи", f.kind)}${opt("expense", "Само разходи", f.kind)}${opt("income", "Само приходи", f.kind)}</select></label>
+        <label class="field"><span>Категория</span>
+          <select class="input" id="f-cat" data-filter="cat">${opt("all", "Всички категории", f.cat)}
+            <optgroup label="Разходи">${EXP.map((c) => opt(c.id, c.name, f.cat)).join("")}</optgroup>
+            <optgroup label="Приходи">${INC.map((c) => opt(c.id, c.name, f.cat)).join("")}</optgroup>
+          </select></label>
+        <label class="field grow"><span>Търсене</span><input class="input" type="search" id="f-q" data-filter="q" placeholder="в описанието" value="${esc(f.q)}"></label>
+      </div>
+      <div class="sumline"><span><b>${list.length}</b> ${list.length === 1 ? "запис" : "записа"}</span>
+        <span>Приходи <b class="num inc">+${money(t.inc)}</b></span>
+        <span>Разходи <b class="num">−${money(t.exp)}</b></span>
+        <span>Нето <b class="num ${t.inc - t.exp < 0 ? "neg" : ""}">${t.inc - t.exp < 0 ? "−" : "+"}${money(Math.abs(t.inc - t.exp))}</b></span>
+      </div>
+    </section>`;
+
+    let rows = "", lastDay = "";
+    for (const e of list) {
+      if (e.date !== lastDay) { rows += `<div class="day">${dayLabel(e.date)}${e.date.slice(0, 4) !== S.month.slice(0, 4) ? " " + e.date.slice(0, 4) : ""}</div>`; lastDay = e.date; }
+      rows += entryRow(e);
+    }
+    h += `<section class="panel">${list.length ? `<div class="rows">${rows}</div>` : loadingOr(`<p class="empty">Няма записи, които отговарят на филтрите. Сменете периода или категорията.</p>`)}</section>`;
+    return h;
+  }
+
+  function viewBudget() {
+    const m = S.month;
+    const b = budgetFor(m);
+    const t = totals(monthEntries(m));
+    const lim = b.limits || {};
+    const pt = planTotal(b);
+    const dis = S.canWrite && !S.noDb ? "" : " disabled";
+    const srcNote = b.source === "month" ? "Собствен план за този месец." : b.source === "default" ? "Използва се планът по подразбиране. Ако го промените тук, ще важи само за този месец, освен ако не отметнете опцията долу." : "Още няма план. Въведете сума за всяка категория.";
+    const prevB = S.budgets[addMonths(m, -1)];
+
+    let h = `<section class="panel">
+      <div class="panel-head"><h2>Планиран бюджет · ${esc(monthLabel(m))}</h2><small>${srcNote}</small></div>
+      <form id="plan-form" autocomplete="off">
+        <div class="plan-grid">
+          ${EXP.map((c) => `<label class="field"><span class="plan-label"><span class="dot" style="--c:${c.c}"></span>${esc(c.name)}</span>
+            <span class="money-in"><input class="input" id="b-${c.id}" data-keep inputmode="decimal" placeholder="0" value="${esc(toInput(lim[c.id]))}"${dis}></span></label>`).join("")}
+          <label class="field"><span class="plan-label"><span class="dot" style="--c:var(--income)"></span>Очаквани приходи</span>
+            <span class="money-in"><input class="input" id="b-income" data-keep inputmode="decimal" placeholder="0" value="${esc(toInput(b.income))}"${dis}></span></label>
+        </div>
+        ${dis ? "" : `<div class="plan-actions">
+          <button type="submit" class="btn btn-primary">Запази плана</button>
+          <label class="check"><input type="checkbox" id="b-default" data-keep${b.source === "default" || (!b.source) ? " checked" : ""}> Използвай и за следващите месеци</label>
+          ${prevB ? `<button type="button" class="btn" data-action="copy-prev">Копирай от ${esc(MONTHS[+addMonths(m, -1).slice(5) - 1].toLowerCase())}</button>` : ""}
+        </div>`}
+      </form>
+    </section>`;
+
+    // report table
+    let body = "";
+    for (const c of EXP) {
+      const plan = lim[c.id] || 0, act = t.byCat[c.id] || 0, diff = plan - act;
+      body += `<tr><td><span class="tcat"><span class="dot" style="--c:${c.c}"></span>${esc(c.name)}</span></td>
+        <td class="num">${plan ? money(plan) : "—"}</td><td class="num">${money(act)}</td>
+        <td class="num">${plan ? (diff >= 0 ? `<span class="diff-good">${money(diff)} под плана</span>` : `<span class="diff-bad">⚠ ${money(-diff)} над плана</span>`) : "—"}</td>
+        <td class="num"><span class="pct">${plan ? Math.round((act / plan) * 100) + "%" : "—"}</span></td></tr>`;
+    }
+    const dAll = pt - t.exp;
+    const netPlan = (b.income || 0) - pt, netAct = t.inc - t.exp;
+    h += `<section class="panel">
+      <div class="panel-head"><h2>Справка: план срещу реално</h2><small>${esc(monthLabel(m))}</small></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Категория</th><th>План</th><th>Реално</th><th>Разлика</th><th>Изпълнение</th></tr></thead>
+        <tbody>${body}</tbody>
+        <tfoot>
+          <tr class="sep"><td>Общо разходи</td><td class="num">${pt ? money(pt) : "—"}</td><td class="num">${money(t.exp)}</td>
+            <td class="num">${pt ? (dAll >= 0 ? `<span class="diff-good">${money(dAll)} под плана</span>` : `<span class="diff-bad">⚠ ${money(-dAll)} над плана</span>`) : "—"}</td>
+            <td class="num">${pt ? Math.round((t.exp / pt) * 100) + "%" : "—"}</td></tr>
+          <tr><td>Приходи</td><td class="num">${b.income ? money(b.income) : "—"}</td><td class="num inc">${money(t.inc)}</td>
+            <td class="num">${b.income ? (t.inc >= b.income ? `<span class="diff-good">+${money(t.inc - b.income)} над очакваното</span>` : `<span class="diff-bad">${money(b.income - t.inc)} по-малко</span>`) : "—"}</td>
+            <td class="num">${b.income ? Math.round((t.inc / b.income) * 100) + "%" : "—"}</td></tr>
+          <tr><td>Баланс</td><td class="num">${b.income || pt ? (netPlan < 0 ? "−" : "") + money(Math.abs(netPlan)) : "—"}</td>
+            <td class="num ${netAct < 0 ? "neg" : ""}">${netAct < 0 ? "−" : ""}${money(Math.abs(netAct))}</td><td></td><td></td></tr>
+        </tfoot>
+      </table></div>
+    </section>`;
+
+    h += `<section class="panel">
+      <div class="panel-head"><h2>Последните 6 месеца</h2><small>до ${esc(monthLabel(m))}</small></div>
+      <div class="legend"><span><i style="background:var(--bar-inc)"></i>Приходи</span><span><i style="background:var(--bar-exp)"></i>Разходи</span><span><i class="tick"></i>Бюджет за разходи</span></div>
+      <div class="chart-box" id="chart"></div>
+      <details class="as-table"><summary>Покажи като таблица</summary><div class="table-wrap" id="chart-table"></div></details>
+    </section>`;
+    return h;
+  }
+
+  function sixMonths() {
+    const out = [];
+    for (let k = 5; k >= 0; k--) {
+      const m = addMonths(S.month, -k);
+      const t = totals(monthEntries(m));
+      const pt = planTotal(budgetFor(m));
+      out.push({ m, inc: t.inc, exp: t.exp, plan: pt || null });
+    }
+    return out;
+  }
+
+  function niceMax(v) {
+    if (v <= 0) return 10000;
+    const e = Math.pow(10, Math.floor(Math.log10(v)));
+    for (const s of [1, 2, 2.5, 5, 10]) if (s * e >= v) return s * e;
+    return 10 * e;
+  }
+
+  function barPath(x, y, w, h, r) {
+    if (h <= 0) return "";
+    r = Math.min(r, w / 2, h);
+    return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+  }
+
+  function drawChart() {
+    const box = $("#chart");
+    if (!box) return;
+    const data = sixMonths();
+    const W = Math.max(280, box.clientWidth || 600), H = 240;
+    const pl = 64, pr = 8, pt = 10, pb = 28;
+    const iw = W - pl - pr, ih = H - pt - pb;
+    const max = niceMax(Math.max(...data.map((d) => Math.max(d.inc, d.exp, d.plan || 0))));
+    const y = (v) => pt + ih - (v / max) * ih;
+    const gw = iw / data.length;
+    const bw = Math.max(6, Math.min(26, gw * 0.3));
+    let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Приходи и разходи за последните 6 месеца">`;
+    for (let i = 0; i <= 4; i++) {
+      const v = (max / 4) * i, yy = y(v);
+      s += `<line x1="${pl}" x2="${W - pr}" y1="${yy}" y2="${yy}" stroke="var(--line)" stroke-width="1"${i === 0 ? "" : ' stroke-dasharray="2 3"'}/>`;
+      s += `<text x="${pl - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="var(--muted)" style="font-variant-numeric:tabular-nums">${esc(money0(v))}</text>`;
+    }
+    data.forEach((d, i) => {
+      const cx = pl + gw * i + gw / 2;
+      const x1 = cx - bw - 1, x2 = cx + 1;
+      s += `<path d="${barPath(x1, y(d.inc), bw, pt + ih - y(d.inc), 4)}" fill="var(--bar-inc)"/>`;
+      s += `<path d="${barPath(x2, y(d.exp), bw, pt + ih - y(d.exp), 4)}" fill="var(--bar-exp)"/>`;
+      if (d.plan) s += `<line x1="${x2 - 4}" x2="${x2 + bw + 4}" y1="${y(d.plan)}" y2="${y(d.plan)}" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 2"/>`;
+      const cur = d.m === S.month;
+      s += `<text x="${cx}" y="${H - 8}" text-anchor="middle" font-size="12" fill="${cur ? "var(--ink)" : "var(--muted)"}" font-weight="${cur ? 700 : 400}">${MONTHS_SHORT[+d.m.slice(5) - 1]}</text>`;
+      s += `<rect x="${pl + gw * i}" y="${pt}" width="${gw}" height="${ih + pb}" fill="transparent" data-i="${i}" class="hit"/>`;
+    });
+    s += `</svg><div class="tip" id="tip" hidden></div>`;
+    box.innerHTML = s;
+
+    const tip = $("#tip");
+    const show = (i) => {
+      const d = data[i];
+      const net = d.inc - d.exp;
+      tip.innerHTML = `<b>${esc(monthLabel(d.m))}</b>
+        <div><span>Приходи</span><span class="num">${money(d.inc)}</span></div>
+        <div><span>Разходи</span><span class="num">${money(d.exp)}</span></div>
+        <div><span>Бюджет</span><span class="num">${d.plan ? money(d.plan) : "—"}</span></div>
+        <div><span>Нето</span><span class="num">${net < 0 ? "−" : "+"}${money(Math.abs(net))}</span></div>`;
+      tip.hidden = false;
+      const gx = pl + gw * i + gw / 2;
+      const tw = tip.offsetWidth;
+      let left = gx + 16;
+      if (left + tw > W) left = gx - tw - 16;
+      tip.style.left = Math.max(0, left) + "px";
+      tip.style.top = "10px";
+    };
+    box.querySelectorAll(".hit").forEach((r) => {
+      r.addEventListener("mouseenter", () => show(+r.dataset.i));
+      r.addEventListener("click", () => show(+r.dataset.i));
+    });
+    box.addEventListener("mouseleave", () => { tip.hidden = true; });
+
+    const tbl = $("#chart-table");
+    if (tbl) tbl.innerHTML = `<table><thead><tr><th>Месец</th><th>Приходи</th><th>Разходи</th><th>Бюджет</th><th>Нето</th></tr></thead><tbody>${data.map((d) => `<tr><td>${esc(monthLabel(d.m))}</td><td class="num">${money(d.inc)}</td><td class="num">${money(d.exp)}</td><td class="num">${d.plan ? money(d.plan) : "—"}</td><td class="num">${d.inc - d.exp < 0 ? "−" : "+"}${money(Math.abs(d.inc - d.exp))}</td></tr>`).join("")}</tbody></table>`;
+  }
+
+  function viewRecurring() {
+    const list = S.recurring.slice().sort((a, b) => (b.active - a.active) || (a.kind === b.kind ? 0 : a.kind === "income" ? -1 : 1) || (a.day - b.day));
+    const w = S.canWrite && !S.noDb;
+    let rows = "";
+    for (const r of list) {
+      const c = CAT[r.cat] || { name: r.cat, c: "var(--muted)" };
+      const confirming = S.confirmTpl === r.id;
+      rows += `<div class="tpl${r.active ? "" : " paused"}">
+        <span class="dot" style="--c:${c.c}"></span>
+        <span class="row-main"><span class="row-title">${esc(r.note || c.name)} <span class="pill ${r.active ? "on" : "off"}">${r.active ? "Активен" : "Спрян"}</span></span>
+          <span class="row-sub">${esc(c.name)} · всеки месец на ${r.day}-о число · от ${esc(monthLabel(r.start).toLowerCase())}</span></span>
+        <span class="row-amt num ${r.kind === "income" ? "inc" : ""}">${r.kind === "income" ? "+" : "−"}${money(r.cents)}</span>
+        ${w ? (confirming ? `<div class="tpl-acts"><div class="confirm" style="width:100%">Да изтрием ли „${esc(r.note || c.name)}“? Вече добавените записи остават, но нови няма да се създават.<div><button type="button" class="btn btn-sm btn-danger" data-action="tpl-delete-yes" data-id="${esc(r.id)}">Изтрий</button><button type="button" class="btn btn-sm" data-action="tpl-delete-no">Откажи</button></div></div></div>`
+          : `<div class="tpl-acts">
+          <button type="button" class="btn btn-sm" data-action="tpl-edit" data-id="${esc(r.id)}">Редактирай</button>
+          <button type="button" class="btn btn-sm" data-action="tpl-toggle" data-id="${esc(r.id)}">${r.active ? "Спри" : "Възобнови"}</button>
+          <button type="button" class="btn btn-sm btn-danger" data-action="tpl-delete" data-id="${esc(r.id)}">Изтрий</button>
+        </div>`) : ""}
+      </div>`;
+    }
+    const inc = list.filter((r) => r.active && r.kind === "income").reduce((s, r) => s + r.cents, 0);
+    const exp = list.filter((r) => r.active && r.kind === "expense").reduce((s, r) => s + r.cents, 0);
+    return `<section class="panel">
+      <div class="panel-head"><h2>Повтарящи се приходи и разходи</h2>${w ? `<button type="button" class="btn btn-sm" data-action="tpl-add">+ Нов повтарящ се запис</button>` : ""}</div>
+      <p class="hint" style="margin:0 0 8px">Всеки активен запис се прехвърля автоматично в следващия месец на посочената дата. Наемът, сметките и заплатата са добри кандидати. Ако изтриете прехвърлен запис от даден месец, той се пропуска само за този месец.</p>
+      ${list.length ? `<div class="sumline" style="padding-top:0;padding-bottom:6px"><span>Всеки месец: приходи <b class="num inc">+${money(inc)}</b></span><span>разходи <b class="num">−${money(exp)}</b></span></div><div>${rows}</div>`
+        : loadingOr(`<p class="empty"><b>Още няма повтарящи се записи.</b><br>При добавяне на разход или приход отметнете „Повтаряй всеки месец“, или използвайте бутона горе.</p>`)}
+    </section>`;
+  }
+
+  // ---------- modal ----------
+  function openModal(state) {
+    S.modal = state;
+    renderModal();
+    setTimeout(() => { const a = $("#m-amount"); if (a) a.focus(); }, 30);
+  }
+  function closeModal() { S.modal = null; $("#modal-root").innerHTML = ""; }
+
+  function renderModal() {
+    const M = S.modal;
+    if (!M) return;
+    const isTpl = M.mode === "tpl-add" || M.mode === "tpl-edit";
+    const cats = M.kind === "income" ? INC : EXP;
+    if (!cats.some((c) => c.id === M.cat)) M.cat = cats[0].id;
+    const title = { add: "Нов запис", edit: "Редакция на запис", "tpl-add": "Нов повтарящ се запис", "tpl-edit": "Редакция на повтарящ се запис" }[M.mode];
+    const notePh = M.cat === "other" || M.cat === "other_in" ? "За какво беше? (по желание)" : "Кратко описание (по желание)";
+    let delBlock = "";
+    if (M.mode === "edit" || M.mode === "tpl-edit") {
+      if (M.confirmDel) {
+        const msg = M.mode === "tpl-edit" ? "Шаблонът ще бъде изтрит. Вече добавените записи остават." : M.rec ? "Записът ще бъде премахнат само за този месец. Повтарянето в следващите месеци продължава." : "Записът ще бъде изтрит.";
+        delBlock = `<div class="confirm">${msg}<div><button type="button" class="btn btn-sm btn-danger" data-action="m-delete-yes">Изтрий</button><button type="button" class="btn btn-sm" data-action="m-delete-no">Откажи</button></div></div>`;
+      }
+    }
+    $("#modal-root").innerHTML = `<div class="scrim" data-action="m-scrim">
+      <form class="sheet" id="m-form" role="dialog" aria-modal="true" aria-labelledby="m-title" autocomplete="off">
+        <h3 id="m-title">${title}</h3>
+        ${M.virtual ? `<p class="hint" style="margin:0">Това е очакван повтарящ се запис за бъдещ месец. Ако го запазите, промяната важи само за този месец.</p>` : ""}
+        <div class="seg" role="radiogroup" aria-label="Вид">
+          <input type="radio" name="m-kind" id="m-kind-exp" value="expense"${M.kind === "expense" ? " checked" : ""}><label for="m-kind-exp">Разход</label>
+          <input type="radio" name="m-kind" id="m-kind-inc" value="income"${M.kind === "income" ? " checked" : ""}><label for="m-kind-inc">Приход</label>
+        </div>
+        <label class="field"><span>Сума</span><span class="amount-in"><input id="m-amount" inputmode="decimal" placeholder="0,00" value="${esc(M.amount)}" aria-label="Сума в евро"></span></label>
+        <div class="field"><span>Категория</span>
+          <div class="chips" role="radiogroup" aria-label="Категория">${cats.map((c) => `<input type="radio" name="m-cat" id="m-cat-${c.id}" value="${c.id}"${M.cat === c.id ? " checked" : ""}><label for="m-cat-${c.id}"><span class="dot" style="--c:${c.c}"></span>${esc(c.name)}${c.hint ? ` <em>${esc(c.hint)}</em>` : ""}</label>`).join("")}</div>
+        </div>
+        <div class="row2">
+          ${isTpl ? `<label class="field"><span>Ден от месеца</span><input class="input" type="number" id="m-day" min="1" max="31" value="${esc(M.day)}"></label>`
+                  : `<label class="field"><span>Дата</span><input class="input" type="date" id="m-date" value="${esc(M.date)}"></label>`}
+          <label class="field"><span>Описание</span><input class="input" type="text" id="m-note" maxlength="80" placeholder="${notePh}" value="${esc(M.note)}"></label>
+        </div>
+        ${M.mode === "add" ? `<label class="check"><input type="checkbox" id="m-rec"${M.rec ? " checked" : ""}> Повтаряй всеки месец</label><p class="hint" style="margin:-10px 0 0 26px">Записът ще се добавя автоматично на същата дата в следващите месеци.</p>` : ""}
+        ${M.mode === "tpl-edit" && M.curInstance ? `<label class="check"><input type="checkbox" id="m-apply"${M.apply ? " checked" : ""}> Обнови и записа за ${esc(monthLabel(curMonth()).toLowerCase())}</label>` : ""}
+        ${M.err ? `<div class="form-err" role="alert">${esc(M.err)}</div>` : ""}
+        ${delBlock}
+        <div class="sheet-acts">
+          ${(M.mode === "edit" || M.mode === "tpl-edit") && !M.confirmDel ? `<button type="button" class="btn btn-danger left" data-action="m-delete">Изтрий</button>` : ""}
+          <button type="button" class="btn" data-action="m-cancel">Откажи</button>
+          <button type="submit" class="btn btn-primary"${M.busy ? " disabled" : ""}>${M.busy ? "Запазваме…" : "Запази"}</button>
+        </div>
+      </form>
+    </div>`;
+  }
+
+  function readModal() {
+    const M = S.modal;
+    const g = (id) => document.getElementById(id);
+    M.kind = document.querySelector('input[name="m-kind"]:checked')?.value || M.kind;
+    M.cat = document.querySelector('input[name="m-cat"]:checked')?.value || M.cat;
+    M.amount = g("m-amount")?.value ?? M.amount;
+    M.note = g("m-note")?.value ?? M.note;
+    if (g("m-date")) M.date = g("m-date").value;
+    if (g("m-day")) M.day = g("m-day").value;
+    if (g("m-rec")) M.rec = g("m-rec").checked;
+    if (g("m-apply")) M.apply = g("m-apply").checked;
+  }
+
+  function newEntryDefaults(kind, cat) {
+    const cm = curMonth();
+    const date = S.month === cm ? todayStr() : `${S.month}-01`;
+    return { mode: "add", kind: kind || "expense", cat: cat || (kind === "income" ? "salary" : "food"), amount: "", note: "", date, rec: false };
+  }
+
+  function findEntry(id, month) {
+    return S.entries.find((e) => e.id === id) || monthEntries(month).find((e) => e.id === id);
+  }
+
+  // ---------- writes ----------
+  function toast(msg) {
+    const root = $("#toast-root");
+    root.innerHTML = `<div class="toast">${esc(msg)}</div>`;
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => { root.innerHTML = ""; }, 2800);
+  }
+  function writeFailed(e) {
+    const code = e && e.code;
+    if (code === "invalid_argument" || code === "permission-denied") { S.canWrite = false; render(); return "Нямате права да променяте записите."; }
+    if (code === "quota_exceeded") return "Базата е пълна. Изтрийте стари записи и опитайте отново.";
+    return "Не успяхме да запазим. Проверете връзката и опитайте отново.";
+  }
+  const nowIso = () => new Date().toISOString();
+
+  async function saveModal() {
+    const M = S.modal;
+    readModal();
+    const cents = parseAmount(M.amount);
+    if (!cents) { M.err = "Въведете сума, по-голяма от нула, например 24,50."; renderModal(); return; }
+    const isTpl = M.mode === "tpl-add" || M.mode === "tpl-edit";
+    const note = (M.note || "").trim().slice(0, 80);
+    let day = 1;
+    if (isTpl) { day = Math.round(Number(M.day)); if (!(day >= 1 && day <= 31)) { M.err = "Денят трябва да е между 1 и 31."; renderModal(); return; } }
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(M.date || "")) { M.err = "Изберете дата."; renderModal(); return; }
+    M.err = ""; M.busy = true; renderModal();
+    const db = S.db;
+    try {
+      if (M.mode === "add") {
+        const month = M.date.slice(0, 7);
+        const base = { kind: M.kind, cents, cat: M.cat, note, date: M.date, month, created: nowIso() };
+        if (M.rec) {
+          const ref = db.collection("recurring").doc();
+          await ref.set({ kind: M.kind, cents, cat: M.cat, note, day: +M.date.slice(8), start: month, active: true, skip: [], created: nowIso() });
+          const eid = `rec-${ref.id}-${month}`;
+          attempted.add(eid);
+          await db.collection("entries").doc(eid).set({ ...base, rec: ref.id });
+          toast("Записът е добавен и ще се повтаря всеки месец");
+        } else {
+          await db.collection("entries").add({ ...base, rec: null });
+          toast("Записът е добавен");
+        }
+      } else if (M.mode === "edit") {
+        const month = M.date.slice(0, 7);
+        await db.collection("entries").doc(M.id).set({ kind: M.kind, cents, cat: M.cat, note, date: M.date, month, rec: M.rec || null, created: M.created || nowIso() });
+        attempted.add(M.id);
+        toast("Промените са запазени");
+      } else if (M.mode === "tpl-add") {
+        const cm = curMonth();
+        const ref = db.collection("recurring").doc();
+        await ref.set({ kind: M.kind, cents, cat: M.cat, note, day, start: cm, active: true, skip: [], created: nowIso() });
+        toast("Повтарящият се запис е създаден");
+      } else if (M.mode === "tpl-edit") {
+        await db.collection("recurring").doc(M.id).update({ kind: M.kind, cents, cat: M.cat, note, day });
+        if (M.apply && M.curInstance) {
+          const inst = M.curInstance;
+          const m = inst.month;
+          const d = Math.min(day, daysIn(m));
+          await db.collection("entries").doc(inst.id).set({ kind: M.kind, cents, cat: M.cat, note, date: `${m}-${pad(d)}`, month: m, rec: M.id, created: inst.created || nowIso() });
+        }
+        toast("Промените са запазени");
+      }
+      closeModal();
+    } catch (e) {
+      M.busy = false; M.err = writeFailed(e); renderModal();
+    }
+  }
+
+  async function deleteFromModal() {
+    const M = S.modal;
+    const db = S.db;
+    M.busy = true; renderModal();
+    try {
+      if (M.mode === "tpl-edit") {
+        await db.collection("recurring").doc(M.id).delete();
+      } else {
+        attempted.add(M.id);
+        if (M.rec) {
+          const r = S.recurring.find((x) => x.id === M.rec);
+          if (r) { const skip = Array.from(new Set([...(r.skip || []), M.month])); await db.collection("recurring").doc(r.id).update({ skip }); }
+        }
+        if (!M.virtual) await db.collection("entries").doc(M.id).delete();
+      }
+      toast("Изтрито");
+      closeModal();
+    } catch (e) {
+      M.busy = false; M.confirmDel = false; M.err = writeFailed(e); renderModal();
+    }
+  }
+
+  async function savePlan() {
+    const m = S.month;
+    const limits = {};
+    for (const c of EXP) limits[c.id] = parsePlan($("#b-" + c.id).value);
+    const income = parsePlan($("#b-income").value);
+    const asDefault = $("#b-default")?.checked;
+    try {
+      await S.db.collection("budgets").doc(m).set({ limits, income, updated: nowIso() });
+      if (asDefault) await S.db.collection("budgets").doc("default").set({ limits, income, updated: nowIso() });
+      document.querySelectorAll("#plan-form input").forEach((i) => delete i.dataset.dirty);
+      toast(asDefault ? "Планът е запазен и ще важи за следващите месеци" : "Планът за месеца е запазен");
+    } catch (e) { toast(writeFailed(e)); }
+  }
+
+  // Recurring entries move into each new month automatically: when the page opens,
+  // every active template gets an entry for each month from its start up to the current one.
+  let applying = false;
+  async function applyRecurring() {
+    if (applying || !S.db || !S.canWrite || !S.sure.e || !S.sure.r) return;
+    applying = true;
+    try {
+      const cm = curMonth();
+      const have = new Set(S.entries.map((e) => e.id));
+      for (const r of S.recurring) {
+        if (!r.active || !r.start) continue;
+        let m = r.start > addMonths(cm, -12) ? r.start : addMonths(cm, -12);
+        for (; m <= cm; m = addMonths(m, 1)) {
+          const id = `rec-${r.id}-${m}`;
+          if (have.has(id) || attempted.has(id) || (r.skip || []).includes(m)) continue;
+          attempted.add(id);
+          const inst = instanceFor(r, m);
+          delete inst.id; delete inst.virtual;
+          try { await S.db.collection("entries").doc(id).set({ ...inst, created: nowIso() }); }
+          catch (e) { if (e && (e.code === "invalid_argument" || e.code === "permission-denied")) { S.canWrite = false; render(); return; } }
+        }
+      }
+    } finally { applying = false; }
+  }
+
+  // ---------- events ----------
+  document.addEventListener("click", (ev) => {
+    const t = ev.target.closest("[data-action], [data-tab]");
+    if (!t) return;
+    if (t.matches("[role=tab]")) { S.tab = t.dataset.tab; S.confirmTpl = null; try { localStorage.setItem("kasa-tab", S.tab); } catch (e) {} render(); return; }
+    const a = t.dataset.action;
+    if (a === "m-scrim") { if (ev.target === t) closeModal(); return; }
+    switch (a) {
+      case "prev-month": S.month = addMonths(S.month, -1); S.open = null; render(); break;
+      case "next-month": S.month = addMonths(S.month, 1); S.open = null; render(); break;
+      case "goto": ev.preventDefault(); S.tab = t.dataset.tab; render(); window.scrollTo({ top: 0 }); break;
+      case "toggle-cat": S.open = S.open === t.dataset.cat ? null : t.dataset.cat; render(); break;
+      case "add": if (!S.canWrite || S.noDb) return; openModal(newEntryDefaults(t.dataset.kind, t.dataset.cat)); break;
+      case "edit": {
+        if (!S.canWrite || S.noDb) return;
+        const e = findEntry(t.dataset.id, t.dataset.month);
+        if (!e) return;
+        openModal({ mode: "edit", id: e.id, kind: e.kind, cat: e.cat, amount: toInput(e.cents), note: e.note || "", date: e.date, month: e.month, rec: e.rec || null, virtual: !!e.virtual, created: e.created });
+        break;
+      }
+      case "tpl-add": openModal({ mode: "tpl-add", kind: "expense", cat: "bills", amount: "", note: "", day: new Date().getDate() }); break;
+      case "tpl-edit": {
+        const r = S.recurring.find((x) => x.id === t.dataset.id);
+        if (!r) return;
+        const cur = S.entries.find((e) => e.id === `rec-${r.id}-${curMonth()}`);
+        openModal({ mode: "tpl-edit", id: r.id, kind: r.kind, cat: r.cat, amount: toInput(r.cents), note: r.note || "", day: r.day, curInstance: cur || null, apply: true });
+        break;
+      }
+      case "tpl-toggle": {
+        const r = S.recurring.find((x) => x.id === t.dataset.id);
+        if (!r) return;
+        const patch = r.active ? { active: false } : { active: true, start: r.start > curMonth() ? r.start : curMonth() };
+        S.db.collection("recurring").doc(r.id).update(patch).then(() => toast(r.active ? "Повтарянето е спряно" : "Повтарянето е възобновено"), (e) => toast(writeFailed(e)));
+        break;
+      }
+      case "tpl-delete": S.confirmTpl = t.dataset.id; render(); break;
+      case "tpl-delete-no": S.confirmTpl = null; render(); break;
+      case "tpl-delete-yes": {
+        const id = t.dataset.id; S.confirmTpl = null;
+        S.db.collection("recurring").doc(id).delete().then(() => toast("Изтрито"), (e) => toast(writeFailed(e)));
+        break;
+      }
+      case "copy-prev": {
+        const p = S.budgets[addMonths(S.month, -1)];
+        if (!p) return;
+        for (const c of EXP) { const i = $("#b-" + c.id); i.value = toInput((p.limits || {})[c.id]); i.dataset.dirty = "1"; }
+        const inc = $("#b-income"); inc.value = toInput(p.income); inc.dataset.dirty = "1";
+        toast("Сумите са копирани. Натиснете „Запази плана“.");
+        break;
+      }
+      case "m-cancel": closeModal(); break;
+      case "m-delete": readModal(); S.modal.confirmDel = true; renderModal(); break;
+      case "m-delete-no": readModal(); S.modal.confirmDel = false; renderModal(); break;
+      case "m-delete-yes": deleteFromModal(); break;
+      case "signin": signIn(); break;
+      case "signout": signOut(auth); break;
+    }
+  });
+
+  document.addEventListener("change", (ev) => {
+    const t = ev.target;
+    if (t.name === "m-kind" || t.name === "m-cat") { readModal(); renderModal(); const f = document.getElementById(t.id); if (f) f.focus(); return; }
+    if (t.dataset.filter && t.dataset.filter !== "q") { S.filter[t.dataset.filter] = t.value; render(); }
+  });
+  document.addEventListener("input", (ev) => {
+    const t = ev.target;
+    if (t.dataset.keep !== undefined) t.dataset.dirty = "1";
+    if (t.dataset.filter === "q") { S.filter.q = t.value; clearTimeout(S.qt); S.qt = setTimeout(render, 200); }
+  });
+  document.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (ev.target.id === "m-form") saveModal();
+    else if (ev.target.id === "plan-form") savePlan();
+  });
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && S.modal) closeModal(); });
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (S.tab === "budget") drawChart(); }, 150); });
+
+  // ---------- firebase ----------
+  // Wraps Firestore in the small collection/doc API the rest of the page uses.
+  // Writes resolve after the server confirms, or after 2.5 s when offline (they are already in the local cache and sync later).
+  function makeDb(fs) {
+    const soft = (p) => new Promise((res, rej) => {
+      let done = false;
+      p.then(() => { if (!done) { done = true; res(); } }, (e) => { if (!done) { done = true; rej(e); } else toast(writeFailed(e)); });
+      setTimeout(() => { if (!done) { done = true; res(); } }, 2500);
+    });
+    const wrap = (ref) => ({ id: ref.id, set: (d) => soft(setDoc(ref, d)), update: (d) => soft(updateDoc(ref, d)), delete: () => soft(deleteDoc(ref)) });
+    return {
+      collection(path) {
+        const col = fsCollection(fs, path);
+        return {
+          doc: (id) => wrap(id ? fsDoc(col, id) : fsDoc(col)),
+          add: (d) => { const ref = fsDoc(col); return soft(setDoc(ref, d)).then(() => wrap(ref)); },
+          onSnapshot: (next, err) => fsOnSnapshot(col, { includeMetadataChanges: true },
+            (snap) => next({ docs: snap.docs.map((d) => ({ id: d.id, data: () => d.data() })), metadata: { fromCache: snap.metadata.fromCache } }), err),
+        };
+      },
+    };
+  }
+
+  function showGate(mode, email) {
+    $("#gate").hidden = false;
+    $("#foot").hidden = true;
+    $("#gate-btn").hidden = mode !== "signin";
+    $("#gate-out").hidden = mode !== "denied";
+    $("#gate-text").textContent = mode === "signin"
+      ? "Семейният бюджет с приходите и разходите ни. Влезте с Google акаунта, който е добавен в приложението."
+      : mode === "denied"
+      ? `Акаунтът ${email} няма достъп. Помолете собственика да добави този имейл в правилата на Firebase, или влезте с друг акаунт.`
+      : email;
+  }
+
+  // ---------- boot ----------
+  render();
+  const firebaseApp = initializeApp(firebaseConfig);
+  const auth = getAuth(firebaseApp);
+  let fs;
+  try { fs = initializeFirestore(firebaseApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+  catch (e) { fs = initializeFirestore(firebaseApp, {}); }
+  const db = makeDb(fs);
+
+  async function signIn() {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    try { await signInWithPopup(auth, provider); }
+    catch (e) {
+      if (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment") return signInWithRedirect(auth, provider);
+      if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") showGate("signin"), ($("#gate-text").textContent = "Входът не успя (" + e.code + "). Опитайте отново.");
+    }
+  }
+
+  let unsubs = [];
+  onAuthStateChanged(auth, (u) => {
+    unsubs.forEach((f) => f()); unsubs = [];
+    S.entries = []; S.recurring = []; S.budgets = {};
+    S.got = { e: false, r: false, b: false }; S.sure = { e: false, r: false };
+    attempted.clear();
+    if (!u) { S.db = null; showGate("signin"); return; }
+    $("#gate").hidden = true;
+    $("#foot").hidden = false;
+    $("#user-email").textContent = u.email || "";
+    S.db = db; S.noDb = false; S.canWrite = true;
+    render();
+    const failed = (e) => {
+      if (e && e.code === "permission-denied") { S.db = null; showGate("denied", u.email); }
+      else { S.noDb = true; render(); }
+    };
+    unsubs.push(db.collection("entries").onSnapshot((snap) => {
+      S.entries = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      S.got.e = true; if (!snap.metadata.fromCache) S.sure.e = true;
+      render(); applyRecurring();
+    }, failed));
+    unsubs.push(db.collection("recurring").onSnapshot((snap) => {
+      S.recurring = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      S.got.r = true; if (!snap.metadata.fromCache) S.sure.r = true;
+      render(); applyRecurring();
+    }, failed));
+    unsubs.push(db.collection("budgets").onSnapshot((snap) => {
+      const b = {}; for (const d of snap.docs) b[d.id] = d.data();
+      S.budgets = b; S.got.b = true; render();
+    }, failed));
+  });
+})();
+</script>
+</body>
+</html>
